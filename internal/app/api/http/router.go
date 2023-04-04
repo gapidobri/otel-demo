@@ -6,9 +6,11 @@ import (
 )
 
 func registerRoutes(r *gin.Engine, s service.Service) {
-	r.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(200, gin.H{
-			"message": s.Get(),
+	r.GET("/", func(c *gin.Context) {
+		ctx := c.Request.Context()
+		data := s.Get(ctx)
+		c.JSON(200, gin.H{
+			"message": data,
 		})
 	})
 }
