@@ -8,7 +8,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger() *otelzap.Logger {
+var (
+	Logger = newLogger()
+)
+
+func newLogger() *otelzap.Logger {
 	core := zapcore.NewCore(
 		zapcore.NewConsoleEncoder(zap.NewProductionEncoderConfig()),
 		zapcore.Lock(os.Stdout),

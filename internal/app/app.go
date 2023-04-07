@@ -7,26 +7,32 @@ import (
 	"github.com/gapidobri/otel-demo/internal/app/service"
 	"github.com/gapidobri/otel-demo/internal/pkg/logging"
 	"github.com/gapidobri/otel-demo/internal/pkg/metrics"
-	"github.com/uptrace/opentelemetry-go-extra/otelplay"
-	"go.opentelemetry.io/otel"
+	"github.com/gapidobri/otel-demo/internal/pkg/tracing"
+	"go.uber.org/zap"
 )
 
 func Run() {
 	ctx := context.Background()
 
-	shutdown := otelplay.ConfigureOpentelemetry(ctx)
-	defer shutdown()
-
-	// Logging
-	logger := logging.NewLogger()
-
 	// Tracing
-	tracer := otel.Tracer("demo-service")
+	{
+		shutdown, err := tracing.Setup(ctx)
+		if err != nil {
+			logging.Logger.Fatal("Failed to setup tracing", zap.Error(err))
+		}
+		defer shutdown(ctx)
+	}
 
 	// Metrics
-	metrics.SetupMetrics()
+	{
+		shutdown, err := metrics.Setup(ctx)
+		if err != nil {
+			logging.Logger.Fatal("Failed to setup metrics", zap.Error(err))
+		}
+		defer shutdown(ctx)
+	}
 
-	service := service.NewService(logger, tracer)
+	service := service.NewService()
 
 	server := http.NewServer(service)
 	server.Run()

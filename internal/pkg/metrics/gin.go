@@ -1,34 +1,31 @@
 package metrics
 
 import (
-	"strconv"
-	"time"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric/instrument"
 )
 
-func SetupGin(r *gin.Engine) {
-	counter := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_requests_total",
-	}, []string{"code", "method", "path"})
-
-	AddCollector(counter)
+func SetupGin(r *gin.Engine) error {
+	counter, err := Meter.Int64Counter(
+		"http_requests_total",
+		instrument.WithDescription("Total number of HTTP requests"),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create counter: %w", err)
+	}
 
 	r.Use(func(c *gin.Context) {
-		counter.WithLabelValues(
-			strconv.Itoa(c.Writer.Status()),
-			c.Request.Method,
-			c.Request.URL.Path,
-		).Inc()
-
+		counter.Add(
+			c, 1,
+			attribute.Int("code", c.Writer.Status()),
+			attribute.String("method", c.Request.Method),
+			attribute.String("path", c.Request.URL.Path),
+		)
 		c.Next()
 	})
 
-	go func() {
-		for {
-			pusher.Push()
-			time.Sleep(5 * time.Second)
-		}
-	}()
+	return nil
 }
