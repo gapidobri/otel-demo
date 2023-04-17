@@ -1,20 +1,20 @@
 version: "3.9"
 
 services:
-  # example-service:
-  #   build:
-  #     context: ../../
-  #     dockerfile: ./build/package/Dockerfile
-  #   container_name: example-service
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     OTEL_SERVICE_NAME: example-service
-  #     OTEL_EXPORTER_JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-  # logging:
-  #   driver: loki
-  #   options:
-  #     loki-url: "http://loki:3100/loki/api/v1/push"
+  example-service:
+    build:
+      context: ../../
+      dockerfile: ./build/package/Dockerfile
+    container_name: example-service
+    ports:
+      - 8080:8080
+    environment:
+      OTEL_SERVICE_NAME: example-service
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
 
   otel-collector:
     image: otel/opentelemetry-collector
@@ -58,6 +58,31 @@ services:
     ports:
       - 3000:3000
 
+  s3:
+    image: minio/minio
+    container_name: minio_loki
+    environment:
+      MINIO_ACCESS_KEY: loki
+      MINIO_SECRET_KEY: example123
+      MINIO_PROMETHEUS_AUTH_TYPE: public
+    command: -c 'mkdir -p /data/loki && mkdir -p /data/tempo && /usr/bin/docker-entrypoint.sh minio server /data'
+    entrypoint: sh
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: curl -f http://s3:9000/minio/health/live
+      timeout: 20s
+    volumes:
+      - minio_loki_data:/loki
+
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+
 volumes:
   jaeger_data:
   grafana_data:
+  minio_loki_data:

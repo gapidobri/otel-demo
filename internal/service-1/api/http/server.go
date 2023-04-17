@@ -1,9 +1,9 @@
 package http
 
 import (
-	"github.com/gapidobri/otel-demo/internal/app/service"
-	l "github.com/gapidobri/otel-demo/internal/pkg/logging"
-	"github.com/gapidobri/otel-demo/internal/pkg/metrics"
+	l "github.com/gapidobri/otel-demo/internal/pkg/observability/logging"
+	"github.com/gapidobri/otel-demo/internal/pkg/observability/metrics"
+	"github.com/gapidobri/otel-demo/internal/service-1/service"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.uber.org/zap"
